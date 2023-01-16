@@ -23,7 +23,7 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildVoiceStates
-	],
+  ],
 });
 /*
 Spotify API object used to access
