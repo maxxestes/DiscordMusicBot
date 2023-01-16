@@ -16,12 +16,12 @@ var querystring = require('querystring');
 All intents needed for discord bot to function.
 */
 const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMembers,
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildVoiceStates
 	],
 });
