@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { checkValidUser, attemptJoinServer, play  } = require('../helperFunctions');
 const { Worker } = require('worker_threads');
 var spotifyApi = require('../data').getSpotifyInstance();
+const queueData = require('../data').getInstance();
 
 
 
@@ -55,6 +56,9 @@ module.exports = {
       currentQueue.songImportQueued = true;
       let songAndArtistList = [];
       await Promise.all(data.body.tracks.items.map((element) => {
+        if (!element.track) {
+          return;
+        }
         let songAndArtist = element.track.name + " " + element.track.artists[0].name;
         songAndArtistList.push(songAndArtist);
       }));
@@ -69,6 +73,10 @@ module.exports = {
       });
 
       worker.on('message', async (result) => {
+          let currentQueue = queueData.queueList.get(interaction.guildId);
+          if (!currentQueue) {
+            return console.log("import finished but bot is not in server.");
+          }
           await interaction.channel.send("Playlist imported");
           for (const song of result) {
             currentQueue.songs.push(song);

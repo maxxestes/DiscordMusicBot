@@ -1,10 +1,14 @@
 const ytSearch = require('yt-search');
 const ytdl = require("ytdl-core");
+const { VoiceConnectionStatus, entersState } = require('@discordjs/voice');
 const { COOKIE } = require("./config.json");
 const fs = require('node:fs');
+const request = require("request");
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 const data = require('./data').getInstance();
 const Queue = require('./data').Queue;
+const authOptions = require('./data').authOptions;
+let spotifyApi = require('./data').getSpotifyInstance();
 
 
 
@@ -13,6 +17,21 @@ Checks to see if a user message for the bot
 should be handled or ignored.
 */
 module.exports = {
+
+  /*
+An interval is set at initialization to call this function.
+Refreshes access token to continue using Spotify API before
+the current token expires.
+*/
+refreshSpotifyToken: function() {
+  request.post(authOptions, function(error, response, body) {
+    if (!error && response.statusCode === 200) {
+      var token = body.access_token;
+      spotifyApi.setAccessToken(token);
+      setInterval(refreshSpotifyToken, 1000 * 60 * 50);
+    }
+  });
+},
 
 
 checkValidUser : function(interaction) {
@@ -50,7 +69,7 @@ checkValidUser : function(interaction) {
     }
     if (!data.queueList.get(interaction.guildId)) {
       try {
-        const voiceConnection = joinVoiceChannel({
+        var voiceConnection = joinVoiceChannel({
           channelId: interaction.member.voice.channelId,
           guildId: interaction.guildId,
           adapterCreator: interaction.guild.voiceAdapterCreator,
@@ -68,6 +87,29 @@ checkValidUser : function(interaction) {
         interaction.channel.send("Error while joining voice channel")
         return undefined;
       }
+      voiceConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+        try {
+          await Promise.race([
+            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+          ]);
+          // Seems to be reconnecting to a new channel - ignore disconnect
+        } catch (error) {
+          // Seems to be a real disconnect which SHOULDN'T be recovered from
+          let currentQueue = data.queueList.get(interaction.guildId);
+          currentQueue.songs = [];
+          currentQueue.connection.destroy();
+          currentQueue.connection = null;
+          currentQueue.player.pause();
+          currentQueue.currentResource = null;
+          currentQueue.songImportQueued = false;
+          currentQueue.currentSong = null;
+          data.queueList.delete(interaction.guildId);
+        }
+      });
+
+
+
       return [data.queueList.get(interaction.guildId), false];
     } else {
       return returnVal;

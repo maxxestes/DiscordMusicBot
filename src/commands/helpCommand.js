@@ -1,6 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const {  checkValidUser  } = require('../helperFunctions');
-const data = require('../data').getInstance();
 
 
 module.exports = {

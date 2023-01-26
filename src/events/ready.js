@@ -1,6 +1,8 @@
 const { Events } = require('discord.js');
-const open = require('open');
-const app = require('../data').getExpressInstance();
+const request = require("request");
+const authOptions = require('../data').authOptions;
+let spotifyApi = require('../data').getSpotifyInstance();
+const {  refreshSpotifyToken  } = require('../helperFunctions');
 
 
 /*
@@ -13,8 +15,13 @@ module.exports = {
 	name: Events.ClientReady,
 	once: true,
 	async execute(client) {
-		app.listen(8888);
-		await open('http://localhost:8888/login');
+		request.post(authOptions, function(error, response, body) {
+			if (!error && response.statusCode === 200) {
+			  var token = body.access_token;
+			  spotifyApi.setAccessToken(token);
+			  setInterval(refreshSpotifyToken, 1000 * 60 * 50);
+			}
+		});
 		console.log(`Ready! Logged in as ${client.user.tag}`);
 	},
 };

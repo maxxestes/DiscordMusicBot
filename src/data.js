@@ -1,46 +1,8 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const SpotifyWebApi = require('spotify-web-api-node');
 const { clientId, clientSecret, redirectUri } = require("./config.json");
-const express = require('express');
-const request = require("request");
-var querystring = require('querystring');
 
 
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated string
- */
-var generateRandomString = function(length) {
-  var text = '';
-  var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-  for (var i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-};
-
-/*
-An interval is set at initialization to call this function.
-Refreshes access token to continue using Spotify API before
-the current token expires.
-*/
-function refreshSpotifyToken() {
-  let spotifyApi = module.exports.getSpotifyInstance();
-  spotifyApi.refreshAccessToken().then(
-      function(data) {
-          console.log('The access token has been refreshed!');
-
-          // Save the access token so that it's used in future calls
-          spotifyApi.setAccessToken(data.body['access_token']);
-          console.log('The access token is ' + data.body['access_token']);
-          console.log('The token expires in ' + data.body['expires_in']);
-      },
-      function(err) {
-          console.log('Could not refresh access token', err);
-      });
-};
 
 class QueueList {
     constructor() {
@@ -59,83 +21,7 @@ class SpotifyAPI {
   }
 }
 let spotifyInstance = null;
-
-class ExpressApp {
-  constructor() {
-    this.app = express();
-    /*
-    first callback function used. Gets the auth
-    code from Spotify API.
-    */
-    this.app.get('/login', function(req, res) {
-
-      var state = generateRandomString(16);
-      var scope = 'user-read-private user-read-email';
-
-      res.redirect('https://accounts.spotify.com/authorize?' +
-        querystring.stringify({
-          response_type: 'code',
-          client_id: clientId,
-          scope: scope,
-          redirect_uri: redirectUri,
-          state: state
-        }));
-    });
-    /*
-    Callback function after login. Gets/sets the
-    access and refresh tokens to access the Spotify
-    API.
-    */
-    this.app.get('/callback', function(req, res) {
-
-      var code = req.query.code || null;
-      var state = req.query.state || null;
-
-      if (state === null) {
-        res.redirect('/#' +
-          querystring.stringify({
-            error: 'state_mismatch'
-          }));
-      } else {
-        var authOptions = {
-          url: 'https://accounts.spotify.com/api/token',
-          form: {
-            code: code,
-            redirect_uri: redirectUri,
-            grant_type: 'authorization_code'
-          },
-          headers: {
-            'Authorization': 'Basic ' + (new Buffer(clientId + ':' + clientSecret).toString('base64'))
-          },
-          json: true
-        };
-        request.post(authOptions, function(error, response, body) {
-          if (!error && response.statusCode === 200) {
-
-            var access_token = body.access_token,
-                refresh_token = body.refresh_token;
-
-
-            let spotifyApi = module.exports.getSpotifyInstance();
-            spotifyApi.setRefreshToken(refresh_token);
-            spotifyApi.setAccessToken(access_token);
-
-            refreshSpotifyToken();
-            setInterval(refreshSpotifyToken, 1000 * 60 * 50);
-
-          } else {
-            res.redirect('/#' +
-              querystring.stringify({
-                error: 'invalid_token'
-              }));
-          }
-        });
-      }
-    });
-  }
-}
-let expressInstance = null;
-
+      
 
 class DiscordClient {
   constructor() {
@@ -166,7 +52,18 @@ class Queue {
     this.player = null,
     this.currentSong = null;
   }
-} 
+}
+
+var authOptions = {
+    url: 'https://accounts.spotify.com/api/token',
+    headers: {
+        'Authorization': 'Basic ' + (new Buffer(clientId + ':' + clientSecret).toString('base64'))
+    },
+    form: {
+        grant_type: 'client_credentials'
+    },
+    json: true
+};
 
   
 module.exports = {
@@ -198,15 +95,10 @@ module.exports = {
     return spotifyInstance.spotifyApi;
   },
 
-  getExpressInstance() {
-    if (!expressInstance) {
-      expressInstance = new ExpressApp();
-    }
-    return expressInstance.app;
-  },
 
+  Queue,
 
-  Queue
+  authOptions
 
 
 

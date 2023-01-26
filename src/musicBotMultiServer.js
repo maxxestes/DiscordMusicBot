@@ -1,5 +1,5 @@
 const { Collection } = require('discord.js');
-const { prefix, token } = require("./config.json");
+const { token } = require("./config.json");
 const fs = require('node:fs');
 const path = require('node:path');
 var discordClient = require('./data').getDiscordInstance();
