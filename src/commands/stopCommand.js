@@ -16,7 +16,7 @@ module.exports = {
         if (validity !== null) {
             return await interaction.reply(validity);
         }
-        else if (currentQueue.songs.length == 0) {
+        else if (currentQueue.songs.length == 0 && !currentQueue.currentSong) {
             return await interaction.reply("There is no queue to stop.");
         }
         else {

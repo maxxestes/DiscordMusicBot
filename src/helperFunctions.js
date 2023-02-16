@@ -28,7 +28,6 @@ refreshSpotifyToken: function() {
     if (!error && response.statusCode === 200) {
       var token = body.access_token;
       spotifyApi.setAccessToken(token);
-      setInterval(refreshSpotifyToken, 1000 * 60 * 50);
     }
   });
 },
@@ -40,7 +39,7 @@ checkValidUser : function(interaction) {
     if (!voiceChannel) {
       return "You need to be in a voice channel to give commands!";
     }
-    else if (!voiceChannel.joinable) {
+    else if (!voiceChannel.joinable && !thisChannelQueue) {
       return "I need the permissions to join and speak in your voice channel!";
     }
     else if (!thisChannelQueue) {
@@ -183,11 +182,14 @@ mp3 and plays it on the player once done.
  play: async function (song, channel) {
   let currentQueue = data.queueList.get(channel.guildId);
   if (!song) {
+    currentQueue.songs = [];
     currentQueue.connection.destroy();
     currentQueue.connection = null;
-    inServer = false;
     currentQueue.player.pause();
     currentQueue.currentResource = null;
+    currentQueue.songImportQueued = false;
+    currentQueue.currentSong = null;
+    data.queueList.delete(channel.guildId);
     channel.send('Song queue has ended.');
     return;
   }

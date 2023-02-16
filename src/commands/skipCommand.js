@@ -19,21 +19,14 @@ module.exports = {
 
         
 
-        else if (currentQueue.songs.length == 0) {
-            if (currentQueue.player.state.status === 'idle') {
+        else if (currentQueue.songs.length == 0 && !currentQueue.currentSong) {
                 return await interaction.reply(
                     "There is no song that I could skip.");
-            }
-            else {
-                currentQueue.currentSong = null;
-                currentQueue.player.stop();
-                return await interaction.reply(
-                    "Song skipped, queue empty.");
-            }
         }
         else {
-          currentQueue.player.stop();
-          return await interaction.reply("Song skipped, " + (currentQueue.songs.length - 1) + " songs left in queue.");
+            currentQueue.currentSong = null;
+            currentQueue.player.stop();
+            return await interaction.reply("Song skipped, " + (currentQueue.songs.length) + " songs left in queue.");
         }
     },
 };

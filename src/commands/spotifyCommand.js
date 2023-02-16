@@ -77,7 +77,7 @@ module.exports = {
           if (!currentQueue) {
             return console.log("import finished but bot is not in server.");
           }
-          await interaction.channel.send("Playlist imported");
+          await interaction.channel.send("Playlist imported: " + searchString);
           for (const song of result) {
             currentQueue.songs.push(song);
           }
